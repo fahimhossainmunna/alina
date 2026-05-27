@@ -1,14 +1,14 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from '@/store/slices/authSlice'; // ◄ নতুন স্লাইসটি ইমপোর্ট করা হলো
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
-      // এখানে ভবিষ্যতে আপনার slices (যেমন: auth, cart) যুক্ত হবে
+      auth: authReducer, // ◄ খালি অবজেক্টের ভেতর রিডিউসার বসানো হলো
     },
   });
 };
 
-// TypeScript-এর জন্য টাইপ এক্সপোর্ট
 export type AppStore = ReturnType<typeof makeStore>;
-export type RootState = ReturnType<AppStore["getState"]>;
-export type AppDispatch = AppStore["dispatch"];
+export type RootState = ReturnType<AppStore['getState']>;
+export type AppDispatch = AppStore['dispatch'];

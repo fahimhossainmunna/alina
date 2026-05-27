@@ -1,8 +1,8 @@
+import { Navbar } from "@/components/layout/Navbar";
+import ReduxProvider from "@/providers/ReduxProvider";
 import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import ReduxProvider from "@/providers/ReduxProvider";
-import { Navbar } from "@/components/layout/Navbar"; 
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -18,7 +18,8 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Alina | Premium Cosmetics & Beauty Products",
-  description: "Discover true elegance with Alina's luxury cosmetic collections.",
+  description:
+    "Discover true elegance with Alina's luxury cosmetic collections.",
 };
 
 export default function RootLayout({
@@ -33,11 +34,9 @@ export default function RootLayout({
     >
       <body className="font-sans min-h-full flex flex-col bg-[#FFFCF9] text-[#1C1B1B]">
         <ReduxProvider>
-          <Navbar /> 
-          
-          <main className="flex-grow">
-            {children}
-          </main>
+          <Navbar />
+
+          <main className="flex-grow">{children}</main>
         </ReduxProvider>
       </body>
     </html>
