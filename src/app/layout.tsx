@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/layout/Navbar";
+import {  Navbar } from "@/components/layout/Navbar";
 import ReduxProvider from "@/providers/ReduxProvider";
 import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
@@ -34,9 +34,9 @@ export default function RootLayout({
     >
       <body className="font-sans min-h-full flex flex-col bg-[#FFFCF9] text-[#1C1B1B]">
         <ReduxProvider>
-          <Navbar />
+            <Navbar />
 
-          <main className="flex-grow">{children}</main>
+            <main className="flex-grow">{children}</main>
         </ReduxProvider>
       </body>
     </html>
