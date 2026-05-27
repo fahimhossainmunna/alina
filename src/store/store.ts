@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '@/store/slices/authSlice'; // ◄ নতুন স্লাইসটি ইমপোর্ট করা হলো
+import authReducer from '@/store/slices/authSlice'; 
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
-      auth: authReducer, // ◄ খালি অবজেক্টের ভেতর রিডিউসার বসানো হলো
+      auth: authReducer, 
     },
   });
 };

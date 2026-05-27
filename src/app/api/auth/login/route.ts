@@ -4,7 +4,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // ডামি অথেনটিকেশন চেক
     return NextResponse.json({
       success: true,
       message: "Login successful (Mock API)",
