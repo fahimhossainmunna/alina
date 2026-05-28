@@ -57,7 +57,7 @@ export default function RegisterPage() {
   const strengthColors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
 
   return (
-    <div className="min-h-screen bg-[#FFFCF9] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-[#FFFCF9] flex items-center justify-center px-4 py-8 mt-20 overflow-hidden">
       <motion.div
         variants={containerVariants}
         initial="hidden"

@@ -3,6 +3,7 @@ import ReduxProvider from "@/providers/ReduxProvider";
 import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import ScrollToTop from "@/components/common/ScrollToTop";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -35,8 +36,8 @@ export default function RootLayout({
       <body className="font-sans min-h-full flex flex-col bg-[#FFFCF9] text-[#1C1B1B]">
         <ReduxProvider>
             <Navbar />
-
             <main className="flex-grow">{children}</main>
+            <ScrollToTop/>
         </ReduxProvider>
       </body>
     </html>

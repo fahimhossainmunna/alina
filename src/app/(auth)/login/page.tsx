@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFCF9] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-[#FFFCF9] flex items-center justify-center px-4 pb-4 pt-5 mt-25 overflow-hidden">
       <motion.div
         variants={containerVariants}
         initial="hidden"
