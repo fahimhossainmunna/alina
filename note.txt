@@ -1,0 +1,1 @@
+rounded-tl-[15px] rounded-br-[15px]
