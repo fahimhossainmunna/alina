@@ -32,15 +32,13 @@ export default function CategoryProductsDirectPage() {
 
   const isBrowsingSubProducts = selectedBrandSlug !== undefined;
 
-  // ── 🎯 ডাইনামিক এবং প্রফেশনাল হেডার টাইটেল মেকানিজম ফিক্স ──
-  // ডিফল্ট অবস্থায় মেইন ক্যাটাগরির নাম ক্যাপিটালাইজ করবে (যেমন: Lipstik, Facewash)
+  // ── 🎯 ডাইনামিক এবং প্রফেশনাল হেডার টাইটেল মেকানিজম ──
   let displayTitle = categorySlug
     ? categorySlug
         .replace(/([A-Z])/g, " $1")
         .replace(/^./, (str) => str.toUpperCase())
     : "Collection";
 
-  // ইউজার যদি কোনো ব্র্যান্ডের ভেতরে থাকে, তবে প্রোডাক্টের ব্র্যান্ড নাম থেকে হেডার ডাইনামিকালি সেট হবে
   if (isBrowsingSubProducts && products.length > 0 && products[0]?.brand) {
     displayTitle = products[0].brand;
   }
@@ -170,11 +168,15 @@ export default function CategoryProductsDirectPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.03 }}
                     onClick={() => {
-                      if (product.isBrandOption) {
-                        updateQueries(product.slug, "All");
-                      }
-                    }}
-                    className="group flex flex-col relative cursor-pointer"
+  if (product.isBrandOption) {
+    updateQueries(product.slug, "All");
+  } else {
+    // 🎯 সাব-প্রোডাক্ট হলে সরাসরি ডাইনামিক প্রোডাক্ট ডিটেইলস পেজে নিয়ে যাবে
+    router.push(`/productShop/${categorySlug}/product/${product.id}`);
+  }
+}}
+                    // যদি ইউজার অলরেডি সাব-প্রোডাক্ট ব্রাউজ করে, তবে কার্ডের ওপর ক্লিক ইভেন্ট অফ থাকবে যাতে বার বার লুপ না মারে
+                    className={`flex flex-col relative ${product.isBrandOption ? "cursor-pointer group" : "cursor-default group"}`}
                   >
                     {/* 📸 IMAGE LAYERS */}
                     <div className="relative aspect-[4/5] rounded-[24px] overflow-hidden bg-[#FCF6F2] border border-[#742709]/5 mb-3 transition-all duration-500 group-hover:shadow-[0_15px_30px_rgba(116,39,9,0.06)]">
@@ -218,7 +220,7 @@ export default function CategoryProductsDirectPage() {
                       {/* Add to Bag Button Layer */}
                       {!product.isBrandOption && (
                         <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/40 via-transparent to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-20">
-                          <button className="w-full bg-[#742709] text-white text-[9px] font-bold uppercase tracking-widest py-2 rounded-xl flex items-center justify-center gap-1">
+                          <button className="w-full bg-[#742709] text-white text-[9px] font-bold uppercase tracking-widest py-2 rounded-xl flex items-center justify-center gap-1 cursor-pointer">
                             <ShoppingBag className="w-3 h-3" /> Add To Bag
                           </button>
                         </div>
