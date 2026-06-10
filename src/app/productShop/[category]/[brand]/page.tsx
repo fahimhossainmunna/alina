@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { CATEGORY_DIRECT_PRODUCTS, type EyeProductItem } from "@/lib/brandData";
+import { ArrowLeft, ShoppingBag, Sparkles, Star } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingBag, Star, Sparkles } from "lucide-react";
-import { CATEGORY_DIRECT_PRODUCTS, type EyeProductItem } from "@/lib/brandData";
+import { useEffect, useState } from "react";
 
 export default function CategoryProductsDirectPage() {
   const params = useParams();
   const router = useRouter();
-  
+
   const categorySlug = params.category as string;
   const [products, setProducts] = useState<EyeProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,16 +21,17 @@ export default function CategoryProductsDirectPage() {
     setLoading(false);
   }, [categorySlug]);
 
-  const displayTitle = categorySlug 
-    ? categorySlug.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+  const displayTitle = categorySlug
+    ? categorySlug
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase())
     : "Collection";
 
   return (
     <main className="w-full min-h-screen bg-[#FFFCF9] text-[#1C1B1B] px-6 sm:px-12 lg:px-24 pt-40 pb-24 font-sans">
       <div className="max-w-7xl mx-auto">
-        
         {/* 🔙 BACK TO MAIN SHOP */}
-        <button 
+        <button
           onClick={() => router.push("/productShop")}
           className="group inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#742709] mb-12 cursor-pointer focus:outline-none"
         >
@@ -43,10 +43,15 @@ export default function CategoryProductsDirectPage() {
         <div className="mb-20 space-y-2">
           <div className="flex items-center gap-2 text-[#742709]">
             <Sparkles className="w-4 h-4 animate-pulse" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.3em]">Atelier Apothecary</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.3em]">
+              Atelier Apothecary
+            </span>
           </div>
           <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight">
-            {displayTitle} <span className="font-normal text-[#742709] italic">Formulations</span>
+            {displayTitle}{" "}
+            <span className="font-normal text-[#742709] italic">
+              Formulations
+            </span>
           </h2>
         </div>
 
@@ -61,16 +66,19 @@ export default function CategoryProductsDirectPage() {
           </div>
         ) : products.length === 0 ? (
           <div className="py-20 text-center border border-dashed border-[#742709]/10 rounded-[24px]">
-            <p className="text-sm text-[#1C1B1B]/40 font-light">No products found in this line.</p>
+            <p className="text-sm text-[#1C1B1B]/40 font-light">
+              No products found in this line.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-20 max-w-5xl">
             {products.map((product) => (
-              <article key={product.id} className="group flex flex-col relative">
-                
+              <article
+                key={product.id}
+                className="group flex flex-col relative"
+              >
                 {/* ── 📸 DUAL IMAGE SWAP CANVAS ── */}
                 <div className="relative aspect-[3/4] rounded-[32px] overflow-hidden bg-[#FCF6F2] border border-[#742709]/5 mb-6 transition-all duration-500 group-hover:shadow-[0_25px_50px_rgba(116,39,9,0.06)]">
-                  
                   {/* Default Product Image */}
                   <Image
                     src={product.defaultImage}
@@ -83,7 +91,7 @@ export default function CategoryProductsDirectPage() {
 
                   {/* ✅ হোভার ইমেজ সোয়াপ মেকানিজম */}
                   <Image
-                    src={product.hoverImage}
+                    src={product.hoverImage ?? product.defaultImage}
                     alt={`${product.name} Hover View`}
                     fill
                     sizes="(max-w-5xl) 50vw"
@@ -92,7 +100,9 @@ export default function CategoryProductsDirectPage() {
 
                   {/* Top Badge */}
                   <div className="absolute top-5 left-5 bg-white/95 backdrop-blur-sm border border-[#742709]/5 px-3 py-1.5 rounded-full z-20">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#742709]">{product.tag}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#742709]">
+                      {product.tag}
+                    </span>
                   </div>
 
                   {/* 🛒 SLIDE-UP ADD TO BAG OVERLAY */}
@@ -102,14 +112,15 @@ export default function CategoryProductsDirectPage() {
                       Add to Atelier Bag
                     </button>
                   </div>
-
                 </div>
 
                 {/* ── 📝 PRODUCT DETAILS ── */}
                 <div className="flex flex-col px-1">
                   <div className="flex items-start justify-between gap-4 mb-1">
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#742709]/50">{product.brand}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#742709]/50">
+                        {product.brand}
+                      </p>
                       <h3 className="font-serif text-2xl font-light transition-colors duration-300 group-hover:text-[#742709]">
                         {product.name}
                       </h3>
@@ -121,15 +132,15 @@ export default function CategoryProductsDirectPage() {
 
                   <div className="flex items-center gap-1 text-amber-400 mt-2">
                     <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <span className="text-xs font-bold text-[#1C1B1B]/70">{product.rating.toFixed(1)}</span>
+                    <span className="text-xs font-bold text-[#1C1B1B]/70">
+                      {product.rating.toFixed(1)}
+                    </span>
                   </div>
                 </div>
-
               </article>
             ))}
           </div>
         )}
-
       </div>
     </main>
   );
