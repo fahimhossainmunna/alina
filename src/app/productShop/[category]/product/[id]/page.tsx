@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ArrowLeft, Star, Heart, ShoppingBag, ShieldCheck, Truck, RefreshCw, Sparkles } from "lucide-react";
+import { 
+  ArrowLeft, Star, Heart, ShoppingBag, ShieldCheck, 
+  Truck, RefreshCw, Sparkles, ChevronLeft, ChevronRight 
+} from "lucide-react";
 
 export default function ProductDetailsPage() {
   const params = useParams();
@@ -13,17 +16,20 @@ export default function ProductDetailsPage() {
   const categorySlug = params.category as string;
 
   const [product, setProduct] = useState<any>(null);
-  const [suggestedProducts, setSuggestedProducts] = useState<any[]>([]); // 🎯 সাজেস্টেড প্রোডাক্টের স্টেট
+  const [randomSuggested, setRandomSuggested] = useState<any[]>([]); // 🎯 র্যান্ডম স্লাইডিং প্রোডাক্ট স্টেট
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // এপিআই থেকে নির্দিষ্ট প্রোডাক্ট এবং একই ক্যাটাগরির সাজেস্টেড প্রোডাক্ট লোড করা
+  // স্লাইডিং ট্র্যাকিংয়ের জন্য রেফ
+  const sliderRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    async function loadData() {
+    async function loadProductAndAllSuggestions() {
       try {
         setLoading(true);
+        
         // ১. কারেন্ট প্রোডাক্ট ডিটেইলস ফেচ
         const resDetail = await fetch(`/api/store/products?productId=${productId}`);
         const dataDetail = await resDetail.json();
@@ -33,38 +39,62 @@ export default function ProductDetailsPage() {
           setActiveImage(dataDetail.product.defaultImage);
         }
 
-        // ২. একই ক্যাটাগরির সব প্রোডাক্ট ফেচ (সাজেশনের জন্য)
-        const resCatalog = await fetch(`/api/store/products?category=${categorySlug}`);
-        const dataCatalog = await resCatalog.json();
-        
-        if (dataCatalog.success && dataCatalog.products) {
-          // কারেন্ট প্রোডাক্ট বাদে বাকি প্রোডাক্টগুলোকে ফিল্টার করে সাজেশনে রাখবো
-          const currentId = parseInt(productId);
-          const rawItems = dataCatalog.products;
-          let flatProducts: any[] = [];
+        // ২. 🎯 গ্লোবাল র্যান্ডম স্লাইডিং সাজেশন লজিক
+        // সব ক্যাটাগরির মিক্সড প্রোডাক্টের জন্য আমরা আমাদের ৪টি প্রধান সাব-প্রোডাক্ট ক্যাটাগরিকে ফেচ করবো
+        const categoriesToFetch = ["facewash", "lipstik", "moisturizers", "serum"];
+        let allFlatProducts: any[] = [];
 
-          // যদি ডাটা স্ট্রাকচারে subProducts থাকে (যেমন লিপস্টিক, ময়েশ্চারাইজার)
-          rawItems.forEach((item: any) => {
-            if (item.subProducts) {
-              flatProducts = [...flatProducts, ...item.subProducts];
-            } else {
-              flatProducts.push(item);
+        await Promise.all(
+          categoriesToFetch.map(async (cat) => {
+            try {
+              const res = await fetch(`/api/store/products?category=${cat}`);
+              const data = await res.json();
+              if (data.success && data.products) {
+                data.products.forEach((item: any) => {
+                  if (item.subProducts) {
+                    allFlatProducts = [...allFlatProducts, ...item.subProducts];
+                  } else {
+                    allFlatProducts.push(item);
+                  }
+                });
+              }
+            } catch (e) {
+              console.error(`Error fetching category ${cat} for suggestions:`, e);
             }
-          });
+          })
+        );
 
-          // কারেন্ট ওপেন থাকা প্রোডাক্ট আইডি বাদে সর্বোচ্চ ৪টা সাজেস্টেড প্রোডাক্ট ফিল্টার
-          const filtered = flatProducts.filter((p: any) => p.id !== currentId).slice(0, 4);
-          setSuggestedProducts(filtered);
+        // কারেন্ট ওপেন থাকা প্রোডাক্টটি বাদ দিয়ে ফিল্টার করা
+        const currentId = parseInt(productId);
+        let filteredPool = allFlatProducts.filter((p: any) => p.id !== currentId);
+
+        // 🎯 ডাইনামিক র্যান্ডম শাফলিং (Fisher-Yates Shuffle Algorithm)
+        for (let i = filteredPool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [filteredPool[i], filteredPool[j]] = [filteredPool[j], filteredPool[i]];
         }
+
+        // স্লাইডিং কন্টেন্টের জন্য আমরা সর্বোচ্চ ১২টি র্যান্ডমাইজড আইটেম সাজেশনে রাখবো
+        setRandomSuggested(filteredPool.slice(0, 12));
+
       } catch (err) {
-        console.error("Error loading data:", err);
+        console.error("Error loading luxury single product pipeline:", err);
       } finally {
         setLoading(false);
       }
     }
     
-    if (productId) loadData();
+    if (productId) loadProductAndAllSuggestions();
   }, [productId, categorySlug]);
+
+  // 🎛️ স্লাইডিং কন্ট্রোল ফাংশন (স্মুথ স্ক্রোলিং ট্রানজিশন)
+  const scrollSlider = (direction: "left" | "right") => {
+    if (sliderRef.current) {
+      const { scrollLeft, clientWidth } = sliderRef.current;
+      const scrollTo = direction === "left" ? scrollLeft - clientWidth * 0.75 : scrollLeft + clientWidth * 0.75;
+      sliderRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
 
   if (loading) {
     return (
@@ -105,7 +135,7 @@ export default function ProductDetailsPage() {
         </button>
 
         {/* ── 🛍️ PRODUCT LAYOUT ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-28">
           
           {/* 📸 LEFT SIDE: IMAGE PANEL */}
           <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4 w-full">
@@ -208,60 +238,95 @@ export default function ProductDetailsPage() {
           </div>
         </div>
 
-        {/* ── 🎯 🎯 NEW SUGGESTED PRODUCTS SECTION (সাজেশন গ্রিড) ── */}
-        {suggestedProducts.length > 0 && (
-          <section className="pt-16 border-t border-[#742709]/10">
-            <div className="mb-10 space-y-1">
-              <div className="flex items-center gap-2 text-[#742709]">
-                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.25em]">Curated For You</span>
+        {/* ── 🎯 🎯 NEW SUGGESTED RANDOM SLIDER SECTION (লাক্সারি স্লাইডার) ── */}
+        {randomSuggested.length > 0 && (
+          <section className="pt-16 border-t border-[#742709]/10 relative group/section">
+            <div className="flex items-end justify-between mb-10">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[#742709]">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                  <span className="text-[9px] font-bold uppercase tracking-[0.25em]">Exclusive Mix Feed</span>
+                </div>
+                <h3 className="font-serif text-2xl sm:text-3xl font-light tracking-tight">
+                  You May Also <span className="font-normal text-[#742709] italic">Like</span>
+                </h3>
               </div>
-              <h3 className="font-serif text-2xl font-light tracking-tight">
-                You May Also <span className="font-normal text-[#742709] italic">Like</span>
-              </h3>
+
+              {/* 🎛️ স্লাইডার নেভিগেশন বাটনসমূহ */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => scrollSlider("left")}
+                  className="p-2.5 rounded-full border border-[#742709]/10 bg-white hover:bg-[#742709] hover:text-white transition-all focus:outline-none shadow-sm cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => scrollSlider("right")}
+                  className="p-2.5 rounded-full border border-[#742709]/10 bg-white hover:bg-[#742709] hover:text-white transition-all focus:outline-none shadow-sm cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {suggestedProducts.map((item: any, index: number) => (
-                <motion.article
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  onClick={() => {
-                    // সাজেস্টেড কার্ডে ক্লিক করলে ডাইনামিকালি ইউআরএল আপডেট হয়ে ওই প্রোডাক্ট ওপেন হবে
-                    router.push(`/productShop/${categorySlug}/product/${item.id}`);
-                  }}
-                  className="group flex flex-col relative cursor-pointer"
-                >
-                  <div className="relative aspect-[4/5] rounded-[24px] overflow-hidden bg-[#FCF6F2] border border-[#742709]/5 mb-3 transition-all duration-500 group-hover:shadow-[0_15px_30px_rgba(116,39,9,0.05)]">
-                    <Image
-                      src={item.defaultImage}
-                      alt={item.name}
-                      fill
-                      sizes="(max-w-768px) 50vw, 25vw"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    />
-                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full border border-[#742709]/5">
-                      <span className="text-[7px] font-bold uppercase tracking-widest text-[#742709]">{item.tag}</span>
-                    </div>
-                  </div>
+            {/* 📦 স্লাইডার ট্র্যাক গ্রিড (টাচ সুইপ ও স্মুথ ওভারফ্লো স্ক্রোলিং সাপোর্ট) */}
+            <div
+              ref={sliderRef}
+              className="flex gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-4 select-none"
+              style={{ scrollbarWidth: "none" }} // ফায়ারফক্স স্ক্রলবার রিমুভাল
+            >
+              {randomSuggested.map((item: any, index: number) => {
+                // ইমেজ প্যাথ ডাইনামিকালি ডিটেক্ট করার ট্র্যাকিং সেফগার্ড লজিক
+                let detectedCategory = "lipstik";
+                if (item.defaultImage.includes("facewash")) detectedCategory = "facewash";
+                else if (item.defaultImage.includes("moisturizers")) detectedCategory = "moisturizers";
+                else if (item.defaultImage.includes("serum")) detectedCategory = "serum";
 
-                  <div className="flex flex-col px-1">
-                    <p className="text-[8px] font-bold uppercase tracking-widest text-[#742709]/60">{item.brand}</p>
-                    <h4 className="font-serif text-xs sm:text-sm font-light tracking-tight mt-0.5 text-[#1C1B1B] group-hover:text-[#742709] transition-colors line-clamp-1">
-                      {item.name}
-                    </h4>
-                    <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#742709]/5">
-                      <span className="font-sans text-xs font-semibold text-[#742709]">${item.price.toFixed(2)}</span>
-                      <div className="flex items-center gap-0.5 text-amber-400">
-                        <Star className="w-2.5 h-2.5 fill-amber-400" />
-                        <span className="text-[9px] font-bold text-[#1C1B1B]/50">{item.rating.toFixed(1)}</span>
+                return (
+                  <motion.article
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.03 }}
+                    onClick={() => {
+                      // স্লাইডারের প্রোডাক্টে ক্লিক করলে ইনস্ট্যান্টলি তার পেজে রিডাইরেক্ট হবে
+                      router.push(`/productShop/${detectedCategory}/product/${item.id}`);
+                    }}
+                    className="min-w-[240px] sm:min-w-[290px] max-w-[300px] flex flex-col snap-start shrink-0 group cursor-pointer"
+                  >
+                    {/* ইমেজ কভার বক্স */}
+                    <div className="relative aspect-[4/5] rounded-[24px] overflow-hidden bg-[#FCF6F2] border border-[#742709]/5 mb-3 transition-all duration-500 group-hover:shadow-[0_15px_30px_rgba(116,39,9,0.06)]">
+                      <Image
+                        src={item.defaultImage}
+                        alt={item.name}
+                        fill
+                        sizes="(max-w-768px) 50vw, 25vw"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                      <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full border border-[#742709]/5">
+                        <span className="text-[7px] font-bold uppercase tracking-widest text-[#742709]">{item.tag}</span>
                       </div>
                     </div>
-                  </div>
-                </motion.article>
-              ))}
+
+                    {/* প্রোডাক্ট ইনফো ব্লক */}
+                    <div className="flex flex-col px-1">
+                      <p className="text-[8px] font-bold uppercase tracking-widest text-[#742709]/60">{item.brand}</p>
+                      <h4 className="font-serif text-xs sm:text-sm font-light tracking-tight mt-0.5 text-[#1C1B1B] group-hover:text-[#742709] transition-colors line-clamp-1">
+                        {item.name}
+                      </h4>
+                      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#742709]/5">
+                        <span className="font-sans text-xs font-semibold text-[#742709]">
+                          ${item.price > 0 ? item.price.toFixed(2) : "22.50"}
+                        </span>
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          <Star className="w-2.5 h-2.5 fill-amber-400" />
+                          <span className="text-[9px] font-bold text-[#1C1B1B]/50">{item.rating.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.article>
+                );
+              })}
             </div>
           </section>
         )}
