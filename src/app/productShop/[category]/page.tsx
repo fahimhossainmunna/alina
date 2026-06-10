@@ -20,11 +20,11 @@ export default function CategoryProductsDirectPage() {
 
   const categorySlug = params.category as string;
 
-  // 🎯 লোকাল স্টেট ফেলে দিয়ে সরাসরি URL Query Parameter (?brand=...) থেকে রিড করা হচ্ছে
+  // 🎯 URL Query Parameter (?brand=...) থেকে সিলেক্টেড ব্র্যান্ড রিড করা হচ্ছে
   const selectedBrandSlug = searchParams.get("brand") || undefined;
   const activeFilter = searchParams.get("filter") || "All";
 
-  // কাস্টম হুক এখন রিফ্রেশ দিলেও ইউআরএল থেকে ডাইরেক্ট ডাটা নিয়ে আসবে
+  // কাস্টম হুক থেকে ডাটা ফেচিং
   const { products, loading } = useBrandProducts(
     categorySlug,
     selectedBrandSlug,
@@ -32,11 +32,18 @@ export default function CategoryProductsDirectPage() {
 
   const isBrowsingSubProducts = selectedBrandSlug !== undefined;
 
-  const displayTitle = categorySlug
+  // ── 🎯 ডাইনামিক এবং প্রফেশনাল হেডার টাইটেল মেকানিজম ফিক্স ──
+  // ডিফল্ট অবস্থায় মেইন ক্যাটাগরির নাম ক্যাপিটালাইজ করবে (যেমন: Lipstik, Facewash)
+  let displayTitle = categorySlug
     ? categorySlug
         .replace(/([A-Z])/g, " $1")
         .replace(/^./, (str) => str.toUpperCase())
     : "Collection";
+
+  // ইউজার যদি কোনো ব্র্যান্ডের ভেতরে থাকে, তবে প্রোডাক্টের ব্র্যান্ড নাম থেকে হেডার ডাইনামিকালি সেট হবে
+  if (isBrowsingSubProducts && products.length > 0 && products[0]?.brand) {
+    displayTitle = products[0].brand;
+  }
 
   // ফিল্টার লজিক
   const uniqueFilters = [
@@ -48,7 +55,7 @@ export default function CategoryProductsDirectPage() {
       ? products
       : products.filter((p: any) => p.tag === activeFilter);
 
-  // 🎯 ইউআরএল কুয়েরি প্যারামিটার আপডেট করার জন্য হেল্পার ফাংশন
+  // ইউআরএল কুয়েরি প্যারামিটার আপডেট করার জন্য হেল্পার ফাংশন
   const updateQueries = (brand: string | undefined, filter: string) => {
     let url = `/productShop/${categorySlug}`;
     const queryParts = [];
@@ -90,7 +97,7 @@ export default function CategoryProductsDirectPage() {
           <h2 className="font-serif text-3xl sm:text-4xl font-light tracking-tight">
             {displayTitle}{" "}
             <span className="font-normal text-[#742709] italic">
-              {isBrowsingSubProducts ? "Products" : "Houses"}
+              {isBrowsingSubProducts ? "Collection" : "Houses"}
             </span>
           </h2>
         </div>
@@ -164,13 +171,12 @@ export default function CategoryProductsDirectPage() {
                     transition={{ duration: 0.4, delay: index * 0.03 }}
                     onClick={() => {
                       if (product.isBrandOption) {
-                        // 🎯 মেইন কাভার কার্ডে ক্লিক করলে ইউআরএল-এ ?brand=slug যুক্ত হবে
                         updateQueries(product.slug, "All");
                       }
                     }}
                     className="group flex flex-col relative cursor-pointer"
                   >
-                    {/* 📸 IMAGE LAYERS (SMART MULTI-HOVER SWAP) */}
+                    {/* 📸 IMAGE LAYERS */}
                     <div className="relative aspect-[4/5] rounded-[24px] overflow-hidden bg-[#FCF6F2] border border-[#742709]/5 mb-3 transition-all duration-500 group-hover:shadow-[0_15px_30px_rgba(116,39,9,0.06)]">
                       {product.hoverImage &&
                       product.hoverImage !== product.defaultImage ? (
